@@ -1,0 +1,47 @@
+{
+    "acs": {
+        "date": "12:55:19",
+        "status": "alarm",
+        "issue": "acs software not running"
+    },
+    "fs_nn": {
+        "date": "12:55:17",
+        "status": "ok",
+        "issue": null
+    },
+    "fmout_nn": {
+        "date": "12:55:17",
+        "status": "ok",
+        "issue": null
+    },
+    "servos_nn": {
+        "date": "12:55:19",
+        "status": "ok",
+        "issue": null
+    },
+    "cryo_nn": {
+        "date": "12:55:19",
+        "status": "alarm",
+        "issue": "tlna temperature too high"
+    },
+    "fs_ns": {
+        "date": "12:55:19",
+        "status": "ok",
+        "issue": null
+    },
+    "fmout_ns": {
+        "date": "12:55:20",
+        "status": "ok",
+        "issue": null
+    },
+    "servos_ns": {
+        "date": "12:55:21",
+        "status": "ok",
+        "issue": null
+    },
+    "cryo_ns": {
+        "date": "12:55:21",
+        "status": "ok",
+        "issue": null
+    }
+}
