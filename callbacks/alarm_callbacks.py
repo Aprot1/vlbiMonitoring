@@ -35,8 +35,9 @@ items_list = ['acs', 'servos', 'fmout', 'fs', 'cryo']
 # Fill the tables with the last 10 alarms for each antenna
 #-----------------------
 def fill_alarm_table():
-    df = pd.read_csv(alarm_log_file, sep=':', header=None, names=['INFO', 'ALARM', 'date', 'time', 'Antenna', 'Item', 'Issue'])
-    df['date&time'] = pd.to_datetime(df['date'].astype(str) + df['time'].astype(str), format='%Y%m%d%H%M%S')
+    df = pd.read_csv(alarm_log_file, sep=':', header=None, dtype=str, names=['INFO', 'ALARM', 'date', 'time', 'Antenna', 'Item', 'Issue'])
+    df['date&time'] = pd.to_datetime(df['date'] + df['time'], format='%Y%m%d%H%M%S')
+
 
     for ant in antennas:
         alarm_log = df[df['Antenna'] == ant].sort_values('date&time', ascending=False)
