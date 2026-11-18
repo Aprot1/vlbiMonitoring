@@ -88,6 +88,7 @@ sidebar = html.Div(
         ),
         html.Hr(),
         html.Div([
+            html.Div(id='doy'),
             html.Div(id='utc-time'),
             html.Div(id='local-time'),
         ]),
@@ -251,9 +252,11 @@ async def display_clocks():
     display = '%Y-%m-%d %H:%M:%S'
     clock_ws = ctx.websocket
     while not clock_ws.is_shutdown:
+        doy = datetime.now().strftime('%j')
         time = datetime.now()
         utc = time.astimezone(ZoneInfo('UTC')).strftime(display)
         local = time.astimezone(ZoneInfo('Europe/Oslo')).strftime(display)
+        set_props('doy', {'children': f'DOY {doy}'})
         set_props('utc-time', {'children': f'{utc} (UTC)'})
         set_props('local-time', {'children': f'{local} (Local)'})
         await asyncio.sleep(1)
