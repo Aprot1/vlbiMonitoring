@@ -26,41 +26,47 @@ def build_receivers_graphs(time):
     press_graphs = {}
     for ant in antennas:    # Temperature figures
         temp_graphs[ant] = go.Figure()
-        for t in temps:
-            if isinstance(time, int):
-                data = influx_methods.get_hours('cryo', t, ant, time)
-            else:
-                data = influx_methods.get_range('cryo', t, ant, time)
+        try:
+            for t in temps:
+                if isinstance(time, int):
+                    data = influx_methods.get_hours('cryo', t, ant, time)
+                else:
+                    data = influx_methods.get_range('cryo', t, ant, time)
 
-            if data is not None:
-                temp_graphs[ant].add_trace(go.Scatter(x=data['_time'], y=data.valueMean, mode='lines', name=t))
+                if data is not None:
+                    temp_graphs[ant].add_trace(go.Scatter(x=data['_time'], y=data.valueMean, mode='lines', name=t))
 
-                temp_graphs[ant].update_layout(
-                    title=f'{ant.capitalize()} receiver Cryo',
-                    yaxis={'title': 'Temperature [K]'},
-                    hovermode='x unified',
-                )
-                temp_graphs[ant].update_xaxes(title_text='Time')
-                temp_graphs[ant].update_yaxes(title_text='Temperature (K)')
-            else:
-                temp_graphs[ant] = utils.no_data_graph(f'cryo {ant}')
+                    temp_graphs[ant].update_layout(
+                        title=f'{ant.capitalize()} receiver Cryo',
+                        yaxis={'title': 'Temperature [K]'},
+                        hovermode='x unified',
+                    )
+                    temp_graphs[ant].update_xaxes(title_text='Time')
+                    temp_graphs[ant].update_yaxes(title_text='Temperature (K)')
+                else:
+                    temp_graphs[ant] = utils.no_data_graph(f'cryo {ant}')
+        except Exception:
+            temp_graphs[ant] = utils.no_data_graph(f'cryo {ant}')
 
 
         # Pressure figures
-        if isinstance(time, int):
-            pressure = influx_methods.get_hours('cryo', 'pressure', ant, time)
-        else:
-            pressure = influx_methods.get_range('cryo', 'pressure', ant, time)
+        try:
+            if isinstance(time, int):
+                pressure = influx_methods.get_hours('cryo', 'pressure', ant, time)
+            else:
+                pressure = influx_methods.get_range('cryo', 'pressure', ant, time)
 
-        if pressure is not None:
-            press_graphs[ant] = px.line(x=pressure['_time'], y=pressure.valueMean, labels={'x': 'Time', 'y': 'Pressure (mbar)'})
+            if pressure is not None:
+                press_graphs[ant] = px.line(x=pressure['_time'], y=pressure.valueMean, labels={'x': 'Time', 'y': 'Pressure (mbar)'})
 
-            press_graphs[ant].update_layout(
-                    title=f'{ant.capitalize()} receiver Pressure',
-                    xaxis={'title': ''},
-                    yaxis={'title': 'Pressure [mbar]', 'exponentformat': 'e', 'showexponent': 'all'},
-                )
-        else:
+                press_graphs[ant].update_layout(
+                        title=f'{ant.capitalize()} receiver Pressure',
+                        xaxis={'title': ''},
+                        yaxis={'title': 'Pressure [mbar]', 'exponentformat': 'e', 'showexponent': 'all'},
+                    )
+            else:
+                press_graphs[ant] = utils.no_data_graph(f'Pressure {ant}')
+        except Exception:
             press_graphs[ant] = utils.no_data_graph(f'Pressure {ant}')
 
     return {

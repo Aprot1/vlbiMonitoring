@@ -28,67 +28,73 @@ def build_clocks_graphs(time):
     graphs = {}
     # get and plot the data for fmout2gps
     for ant in antennas:
-        if isinstance(time, int):
-            fmout[ant] = influx_methods.get_hours('maser', 'fmout2gps', 'tic', time, tag=ant)
-        else:
-            fmout[ant] = influx_methods.get_range('maser', 'fmout2gps', 'tic', time, tag=ant)
+        try:
+            if isinstance(time, int):
+                fmout[ant] = influx_methods.get_hours('maser', 'fmout2gps', 'tic', time, tag=ant)
+            else:
+                fmout[ant] = influx_methods.get_range('maser', 'fmout2gps', 'tic', time, tag=ant)
 
-        if fmout[ant] is not None:  # there are data available for the period
-            t = (fmout[ant]['_time'] - fmout[ant]['_time'].iloc[0]).dt.total_seconds() / 3600   # Convert time to hours
+            if fmout[ant] is not None:  # there are data available for the period
+                t = (fmout[ant]['_time'] - fmout[ant]['_time'].iloc[0]).dt.total_seconds() / 3600   # Convert time to hours
+                try:
+                    slope, intercept = np.polyfit(t, fmout[ant]['_value'], 1)   # linear regression
+                except:
+                    slope, intercept = np.nan, np.nan
+
+                fmout[ant]['fit'] = slope * t + intercept
+                graphs[ant] = px.line()
+                graphs[ant].add_trace(go.Scatter(x=fmout[ant]['_time'], y=fmout[ant]['_value'],
+                                                 name='TIC',
+                                                 marker=dict(color='#316395')
+                                                 ))
+                graphs[ant].add_trace(go.Scatter(x=fmout[ant]['_time'], y=fmout[ant]['fit'],
+                                                 name=f'Drift = {slope * 1e9:.2f} ns.hr⁻¹',
+                                                 marker=dict(color='red')
+                                                 ))
+                graphs[ant].update_layout(
+                    title=f'fmout2gps {ant}',
+                    xaxis={'title': ''},
+                    yaxis={'title': 'TIC [s]', 'exponentformat': 'e', 'showexponent': 'all'},
+                    hovermode='x unified',
+                )
+            else:   # no data for the period asked
+                graphs[ant] = utils.no_data_graph(f'fmout2gps {ant}')
+        except Exception:
+            graphs[ant] = utils.no_data_graph(f'fmout2gps {ant}')
+
+    # get and plot the data for maser2gps
+    try:
+        if isinstance(time, int):
+            tic_t4 = influx_methods.get_hours('maser', 'gps2maser', 'tic', time, tag='t4')
+        else:
+            tic_t4 = influx_methods.get_range('maser', 'gps2maser', 'tic', time, tag='t4')
+
+        if tic_t4 is not None:  # there are data available for the period
+            t = (tic_t4['_time'] - tic_t4['_time'].iloc[0]).dt.total_seconds() / 3600  # Convert time to hours
             try:
-                slope, intercept = np.polyfit(t, fmout[ant]['_value'], 1)   # linear regression
+                slope, intercept = np.polyfit(t, tic_t4['_value'], 1)  # linear regression
             except:
                 slope, intercept = np.nan, np.nan
 
-            fmout[ant]['fit'] = slope * t + intercept
-            graphs[ant] = px.line()
-            graphs[ant].add_trace(go.Scatter(x=fmout[ant]['_time'], y=fmout[ant]['_value'],
+            tic_t4['fit'] = slope * t + intercept
+            graphs['t4'] = px.line()
+            graphs['t4'].add_trace(go.Scatter(x=tic_t4['_time'], y=tic_t4['_value'],
                                              name='TIC',
                                              marker=dict(color='#316395')
                                              ))
-            graphs[ant].add_trace(go.Scatter(x=fmout[ant]['_time'], y=fmout[ant]['fit'],
+            graphs['t4'].add_trace(go.Scatter(x=tic_t4['_time'], y=tic_t4['fit'],
                                              name=f'Drift = {slope * 1e9:.2f} ns.hr⁻¹',
                                              marker=dict(color='red')
                                              ))
-            graphs[ant].update_layout(
-                title=f'fmout2gps {ant}',
+            graphs['t4'].update_layout(
+                title=f'gps2maser t4',
                 xaxis={'title': ''},
                 yaxis={'title': 'TIC [s]', 'exponentformat': 'e', 'showexponent': 'all'},
                 hovermode='x unified',
             )
-        else:   # no data for the period asked
-            graphs[ant] = utils.no_data_graph(f'fmout2gps {ant}')
-
-    # get and plot the data for maser2gps
-    if isinstance(time, int):
-        tic_t4 = influx_methods.get_hours('maser', 'gps2maser', 'tic', time, tag='t4')
-    else:
-        tic_t4 = influx_methods.get_range('maser', 'gps2maser', 'tic', time, tag='t4')
-
-    if tic_t4 is not None:  # there are data available for the period
-        t = (tic_t4['_time'] - tic_t4['_time'].iloc[0]).dt.total_seconds() / 3600  # Convert time to hours
-        try:
-            slope, intercept = np.polyfit(t, tic_t4['_value'], 1)  # linear regression
-        except:
-            slope, intercept = np.nan, np.nan
-
-        tic_t4['fit'] = slope * t + intercept
-        graphs['t4'] = px.line()
-        graphs['t4'].add_trace(go.Scatter(x=tic_t4['_time'], y=tic_t4['_value'],
-                                         name='TIC',
-                                         marker=dict(color='#316395')
-                                         ))
-        graphs['t4'].add_trace(go.Scatter(x=tic_t4['_time'], y=tic_t4['fit'],
-                                         name=f'Drift = {slope * 1e9:.2f} ns.hr⁻¹',
-                                         marker=dict(color='red')
-                                         ))
-        graphs['t4'].update_layout(
-            title=f'gps2maser t4',
-            xaxis={'title': ''},
-            yaxis={'title': 'TIC [s]', 'exponentformat': 'e', 'showexponent': 'all'},
-            hovermode='x unified',
-        )
-    else:  # no data for the period asked
+        else:  # no data for the period asked
+            graphs['t4'] = utils.no_data_graph(f'gps2maser t4')
+    except Exception:
         graphs['t4'] = utils.no_data_graph(f'gps2maser t4')
 
     return {

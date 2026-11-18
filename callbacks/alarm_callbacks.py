@@ -8,8 +8,10 @@ from alarm import alarm_limits as al
 from utils import influx_methods
 from datetime import datetime
 import pandas as pd
+import asyncio
 import dash_bootstrap_components as dbc
 from dash import (
+    ALL,
     callback,
     ctx,
     Input,
@@ -17,6 +19,7 @@ from dash import (
     Output,
     set_props,
 )
+from dash.exceptions import PreventUpdate
 
 from dash_bootstrap_templates import load_figure_template
 
@@ -28,7 +31,7 @@ antennas = ['nn', 'ns']
 colors = dict(ok='bg-success',
               warning='bg-warning',
               alarm='bg-danger')
-items_list = ['acs', 'servos', 'fmout', 'fs', 'cryo']
+items = ['acs', 'fs', 'fmout', 'servos', 'cryo']
 
 
 #-----------------------
@@ -36,8 +39,7 @@ items_list = ['acs', 'servos', 'fmout', 'fs', 'cryo']
 #-----------------------
 def fill_alarm_table():
     df = pd.read_csv(alarm_log_file, sep=':', header=None, dtype=str, names=['INFO', 'ALARM', 'date', 'time', 'Antenna', 'Item', 'Issue'])
-    df['date&time'] = pd.to_datetime(df['date'] + df['time'], format='%Y%m%d%H%M%S')
-
+    df['date&time'] = pd.to_datetime(df['date'].astype(str) + df['time'].astype(str), format='%Y%m%d%H%M%S')
 
     for ant in antennas:
         alarm_log = df[df['Antenna'] == ant].sort_values('date&time', ascending=False)
@@ -62,7 +64,7 @@ def fill_alarm_table():
                                          striped=True,
                                          style={'whiteSpace': 'pre-line'})
 
-        set_props(f'{ant}-alarm-table', {'children': table})
+        set_props(f'{ant}-last-alarm-table', {'children': table})
 
 
 #-----------------------
@@ -89,19 +91,20 @@ def acknowledge_alarms(nn_button, ns_button):
         alarm_methods.write_json(json_ack_file, data)
         fill_alarm_table()
 
+
 #-----------------------
 # Update the item color according to alarm status
 #-----------------------
 def change_color(item):
-    if item == 'acs':
-        data = alarm_methods.read_json_partial(json_alarm_path, 'acs')
+    # if item == 'acs':
+    #     data = alarm_methods.read_json_partial(json_alarm_path, 'acs')
+    #     if data is not None:
+    #         set_props(f'acs-button', {'className': colors[data['status']]})
+    # else:
+    for ant in antennas:
+        data = alarm_methods.read_json_partial(json_alarm_path, f'{item}_{ant}')
         if data is not None:
-            set_props(f'acs-button', {'className': colors[data['status']]})
-    else:
-        for ant in antennas:
-            data = alarm_methods.read_json_partial(json_alarm_path, f'{item}_{ant}')
-            if data is not None:
-                set_props(f'{item}-{ant}-button', {'className': colors[data['status']]})
+            set_props({'type': 'alarm-badge', 'item': item, 'antenna': ant}, {'className': colors[data['status']]})
 
 
 # ----------------------
@@ -117,10 +120,95 @@ def on_timing_interval(active_tab, n):
         return no_update, no_update
 
     print('Updating alarm-tab')
-    for item in items_list:
-        change_color(item)
+    try:
+        for ant in antennas:
+            for item in items:
+                try:
+                    initial_status = influx_methods.get_last('alarms', ant, item)
+                    if initial_status.empty:
+                        initial_status = False
+                    else:
+                        initial_status = initial_status.loc[0, '_value']
+                except Exception:
+                    initial_status = False
+                    influx_methods.record_status(ant, item, initial_status)
 
-    fill_alarm_table()
+                color = 'bg-success' if initial_status else 'bg-light'
+                change_color(item)
+                set_props({'type': 'alarm-switch', 'item': item, 'antenna': ant}, {'value': initial_status})
+                set_props({'type': 'alarm-switch', 'item': item, 'antenna': ant}, {'input_class_name': color})
+    except Exception:
+        pass
+    try:
+        fill_alarm_table()
+    except Exception:
+        pass
 
     last_update = 'Last update: ' + datetime.now().strftime('%H:%M:%S')
     return last_update
+
+
+# ----------------------
+# Change alarm state on switch click
+# ----------------------
+@callback(
+    Input(component_id={'type': 'alarm-switch', 'item': ALL, 'antenna': ALL}, component_property='value'),
+    prevent_initial_call=True,
+)
+def record_switch(values):
+    switch_id = ctx.triggered_id
+    if switch_id:
+        item, ant = switch_id['item'], switch_id['antenna']
+        value = ctx.triggered[0]['value']
+        try:
+            last = influx_methods.get_last('alarms', ant, item)  # Check last recorded state
+            last = last.loc[0, '_value']
+            # print(f'Switch: {item}, antenna: {ant}, last: {last}')
+        except Exception:
+            last = None
+        if last != value:
+            influx_methods.record_status(ant, item, value)
+
+
+
+#--------------------
+# Check the alarm status for each component and change switch accordingly
+#--------------------
+@callback(persistent=True,
+          websocket=True)
+async def check_alarm_status():
+    ws = ctx.websocket
+    last = {}
+    for ant in antennas:
+        last[ant] = {}
+        for item in items:
+            try:
+                initial_status = influx_methods.get_last('alarms', ant, item)
+                if initial_status.empty:
+                    initial_status = False
+                else:
+                    initial_status = initial_status.loc[0, '_value']
+            except Exception:
+                initial_status = False
+                influx_methods.record_status(ant, item, initial_status)
+
+            last[ant][item] = initial_status
+            color = 'bg-success' if initial_status else 'bg-light'
+            set_props({'type': 'alarm-switch', 'item': item, 'antenna': ant}, {'value': initial_status})
+            set_props({'type': 'alarm-switch', 'item': item, 'antenna': ant}, {'input_class_name': color})
+
+    while not ws.is_shutdown:
+        for ant in antennas:
+            for item in items:
+                try:
+                    status = influx_methods.get_last('alarms', ant, item)
+                    status = status.loc[0, '_value']
+                except Exception:
+                    status = last[ant][item]
+
+                if status != last[ant][item]:
+                    last[ant][item] = status
+                    color = 'bg-success' if status else 'bg-light'
+                    set_props({'type': 'alarm-switch', 'item': item, 'antenna': ant}, {'value': status})
+                    set_props({'type': 'alarm-switch', 'item': item, 'antenna': ant}, {'input_class_name': color})
+        await asyncio.sleep(2)

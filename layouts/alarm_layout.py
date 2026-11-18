@@ -6,7 +6,6 @@ This will define the alarm tab layout
 import dash_bootstrap_components as dbc
 import dash_daq as daq
 from dash import (
-    dash_table,
     dcc,
     html,
 )
@@ -16,10 +15,31 @@ load_figure_template('darkly')
 
 label = 'Alarms Overview'
 
-antennas = ['Nn', 'Ns']
 # alarm_state = dict(clear='bg-success', warning='bg-warning', raised='bg-danger')
-# component = ['acs', 'fsClient', 'fsNet', 'fmout', 'servos', 'cryo']
+items = ['acs', 'fs', 'fmout', 'servos', 'cryo']
+antennas = ['nn', 'ns']
 
+# Creating the table with the switches for the alarm
+alarm_table = dbc.Table(
+    [
+        html.Thead(html.Tr([html.Th(''), html.Th('Nn'), html.Th('Ns'),])),
+        html.Tbody([
+            html.Tr([
+                html.Td(item),
+                *[
+                    html.Td(html.Div(
+                        [
+                            dbc.Switch(id={'type': 'alarm-switch', 'item': item, 'antenna': ant}),
+                            dbc.Badge(f'{item} {ant}', id={'type': 'alarm-badge', 'item': item, 'antenna': ant},
+                                      style={'textAlign': 'center', 'fontSize': 15}),
+                        ], className='hstack',
+                    ))
+                    for ant in antennas
+                ],
+            ]) for item in items
+        ])
+    ], style={'width': 'auto'},
+)
 
 ####################
 # ALARM TAB LAYOUT #
@@ -30,38 +50,21 @@ layout = (
         interval=(300 * 1000),
         n_intervals=0
     ),
-
     html.Div([
-        html.Div([
-            dbc.Button('ACS', id='acs-button')
-        ], className='hstack gap-2 mt-2'),
-        html.Div([
-            dbc.Button('fsClient nn', id='fs-nn-button'),
-            dbc.Button('fsClient ns', id='fs-ns-button'),
-        ], className='hstack gap-2'),
-        html.Div([
-            dbc.Button('fmout2gps nn', id='fmout-nn-button'),
-            dbc.Button('fmout2gps ns', id='fmout-ns-button'),
-        ], className='hstack gap-2'),
-        html.Div([
-            dbc.Button('Servos nn', id='servos-nn-button'),
-            dbc.Button('Servos ns', id='servos-ns-button'),
-        ], className='hstack gap-2'),
-        html.Div([
-            dbc.Button('Cryo nn', id='cryo-nn-button'),
-            dbc.Button('Cryo ns', id='cryo-ns-button'),
-        ], className='hstack gap-2'),
+        alarm_table,
+    ]),
+    html.Div([
         html.H2('Last alarms'),
-    ], className='vstack gap-2'),
-    html.Div([
         html.Div([
-            dbc.Table(id='nn-alarm-table'),
-            dbc.Button('Acknowledge alarms', id='nn-acknowledge-button', style={'width': '200px'}),
-        ], className='vstack gap-2'),
-        html.Div([
-            dbc.Table(id='ns-alarm-table'),
-            dbc.Button('Acknowledge alarms', id='ns-acknowledge-button', style={'width': '200px'}),
-        ], className='vstack gap-2'),
-    ], className='hstack gap-2 mt-2 align-items-start'),
+            html.Div([
+                dbc.Table(id='nn-last-alarm-table'),
+                dbc.Button('Acknowledge alarms', id='nn-acknowledge-button', style={'width': '200px'}),
+            ], className='vstack gap-2'),
+            html.Div([
+                dbc.Table(id='ns-last-alarm-table'),
+                dbc.Button('Acknowledge alarms', id='ns-acknowledge-button', style={'width': '200px'}),
+            ], className='vstack gap-2'),
+        ], className='hstack gap-2 mt-2 align-items-start'),
+    ], className='vstack'),
     html.Div(id='last-alarms-update', className='position-relative float-end small'),
 )

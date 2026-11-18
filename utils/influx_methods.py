@@ -3,10 +3,12 @@
 import mysql.connector
 import pandas as pd
 import plotly.express as px
-import influxdb_client
 from datetime import datetime
 import warnings
 from influxdb_client.client.warnings import MissingPivotFunction
+import influxdb_client
+from influxdb_client import Point, WritePrecision
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 warnings.simplefilter("ignore", MissingPivotFunction)
 
@@ -28,20 +30,6 @@ def execute_query(query):
         df = None
 
     return df
-
-
-# def make_df(tables):
-#     time = []
-#     values = []
-#     for table in tables:
-#         for record in table.records:
-#             time.append(record.get_time())
-#             values.append(record.get_value())
-#
-#     df = pd.DataFrame({'time': time, 'value': values})
-#     df['valueMean'] = df['value'].rolling(10, center=True, min_periods=1).mean()
-#
-#     return df
 
 
 # Get the last data
@@ -67,17 +55,6 @@ def get_last(bucket, measurement, field, tag=''):
             '''
 
     df = execute_query(query).drop(columns=['result', 'table'])
-
-    # if tables:
-    #     if len(tables) > 0:
-    #         for table in tables:
-    #             for record in table.records:
-    #                 time = record.get_time()
-    #                 value = record.get_value()
-    #     else:
-    #         time, value = None, None
-    # else:
-    #     time, value = None, None
 
     return df
 
@@ -105,14 +82,6 @@ def get_hours(bucket, measurement, field, hours, tag=''):
 
     df = execute_query(query).drop(columns=['result', 'table'])
     df['valueMean'] = df['_value'].rolling(10, center=True, min_periods=1).mean()
-
-    # if tables:
-    #     if len(tables) > 0:
-    #         df = make_df(tables)
-    #     else:
-    #         df = None
-    # else:
-    #     df = None
 
     return df
 
@@ -142,14 +111,6 @@ def get_range(bucket, measurement, field, time, tag=''):
     df = execute_query(query).drop(columns=['result', 'table'])
     df['valueMean'] = df['_value'].rolling(10, center=True, min_periods=1).mean()
 
-    # if tables:
-    #     if len(tables) > 0:
-    #         df = make_df(tables)
-    #     else:
-    #         df = None
-    # else:
-    #     df = None
-
     return df
 
 
@@ -172,17 +133,25 @@ def get_acs_data(database, query):
     return data
 
 
-def date_to_mjd(date):
-    """
-    Convert a date into "Modified Julian Date" that is used in the database
-    Input must be pandas timestamp type
-    """
-    # First convert to Julian Date using pandas built-in function
-    jd = date.to_julian_date()
-    # then Julian Day to Modified Julian Date
-    mjd = jd - 2400000.5
+#--------------
+# Record the status (ON/OFF) of the alarm in the influxdb
+#--------------
+def record_status(antenna, item, status):
+    print('recording', status, antenna)
+    client = influxdb_client.InfluxDBClient(url=URL, token=TOKEN, org=ORG)
+    try:
+        write_api = client.write_api(write_options=SYNCHRONOUS)
+        point = (Point(antenna)
+                 .time(datetime.now(), write_precision=WritePrecision.S)
+                 .field(item, status))
+        write_api.write(bucket='alarms', record=point)
+    except ApiException as e:
+        print('Influx API error:', e.status, e.reason, e.body)
+    except Exception as e:
+        print('Other error:', type(e).__name__, e)
+    finally:
+        client.close()
 
-    return mjd
 
 if __name__ == '__main__':
     data = get_period('maser', 'fmout2gps', 'tic', '12')

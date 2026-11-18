@@ -3,5 +3,5 @@ cryo = {
     'tcold': 25,
     'tfeed': 25,
     'tlna': 35,
-    'pressure': 0.001,
+    'pressure': 0.0000001,
     }

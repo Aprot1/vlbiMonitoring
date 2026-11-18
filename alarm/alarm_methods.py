@@ -2,9 +2,6 @@
 
 import json
 import os
-import influxdb_client
-from influxdb_client import Point, WritePrecision
-from influxdb_client.client.write_api import SYNCHRONOUS
 from utils import influx_methods
 from datetime import datetime
 from filelock import FileLock
@@ -63,25 +60,6 @@ def write_json(file, data):
             json.dump(data, f, indent=4)
             f.close()
 
-
-#--------------
-# Record the status (ON/OFF) of the alarm in the influxdb
-#--------------
-def record_status(status, antenna):
-    print('recording', status, antenna)
-    client = influxdb_client.InfluxDBClient(url=URL, token=TOKEN, org=ORG)
-    try:
-        write_api = client.write_api(write_options=SYNCHRONOUS)
-        point = (Point('status')
-                 .time(datetime.now(), write_precision=WritePrecision.S)
-                 .field(antenna, status))
-        write_api.write(bucket='alarms', record=point)
-    except ApiException as e:
-        print('Influx API error:', e.status, e.reason, e.body)
-    except Exception as e:
-        print('Other error:', type(e).__name__, e)
-    finally:
-        client.close()
 
 
 if __name__ == '__main__':

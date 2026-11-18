@@ -12,3 +12,8 @@ INFO:ALARM:20261018:112005:nn:servos
 INFO:ALARM:20261019:082506:nn:servos
 INFO:ALARM:20261103:131359:nn:acs:acs software not running
 INFO:ALARM:20261103:131359:nn:cryo:tlna temperature too high
+INFO:ALARM:20261117:102635:nn:acs:acs software not running
+INFO:ALARM:20261117:102635:nn:cryo:tlna temperature too high
+INFO:ALARM:20261117:102635:ns:acs:acs software not running
+INFO:ALARM:20261117:143006:nn:servos:ERROR: Check AZ axis on the LCP_ERROR: Check EL axis on the LCP_ERROR: Emergency stop active
+INFO:ALARM:20261117:145623:nn:servos:ERROR: Check AZ axis on the LCP_ERROR: Check EL axis on the LCP_ERROR: Emergency stop active

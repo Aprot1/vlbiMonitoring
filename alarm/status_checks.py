@@ -9,10 +9,12 @@ import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import alarm_limits as lm
+import radio_alarm
 
 
 monitoring_path = '/home/oper/Antoine/monitoring/dashApp'
 antennas = ['nn', 'ns']
+items = ['acs', 'servos', 'fmout', 'fs', 'cryo']
 cryo_list = ['tint', 'tlna', 'tfeed', 'tcold', 'pressure']
 json_alarm_file = os.path.join(os.path.dirname(__file__), 'alarms_status.json')
 lock_path = os.path.join(os.path.dirname(__file__), 'alarms_status.json.lock')
@@ -237,6 +239,7 @@ def get_servos_status(antenna):
             issue = ''
             for i in out:
                 if 'ERROR' in i:
+                    text = i.split(':')[1].lstrip()
                     issue += f'{i}' if issue == '' else f'_{i}'
         else:
             status = 'ok'
@@ -284,7 +287,7 @@ def get_cryo_status(antenna):
 def run_checks():
     statuses = {}
     for ant in antennas:
-        statuses[f'acs'] = get_acs_status()
+        statuses[f'acs_{ant}'] = get_acs_status()
         statuses[f'fs_{ant}'] = get_fs_status(ant)
         statuses[f'fmout_{ant}'] = get_fmout_status(ant)
         statuses[f'servos_{ant}'] = get_servos_status(ant)
@@ -356,50 +359,52 @@ def check_alarm():
 #-------------------
 # Main part of the script
 #-------------------
-# run_checks()    # Check all the different statuses and write them into the json file
+run_checks()    # Check all the different statuses and write them into the json file
 
-alarm_active = {'nn': False, 'ns': False}
+
+alarm_active = {}
 for ant in antennas:  # Checking the ON/OFF alarm status for each antenna
-    query = f'''
-        from(bucket: "alarms")
-          |> range(start: 0)
-          |> filter(fn: (r) => r._measurement == "status")
-          |> filter(fn: (r) => r._field == "{ant}")
-          |> last()
-        '''
+    alarm_active[ant] = {}
+    for item in items:
+        query = f'''
+            from(bucket: "alarms")
+              |> range(start: 0)
+              |> filter(fn: (r) => r._measurement == "{ant}")
+              |> filter(fn: (r) => r._field == "{item}")
+              |> last()
+            '''
 
-    tables = execute_query(query)
+        tables = execute_query(query)
 
-    if len(tables) > 0:
-        for table in tables:
-            for record in table.records:
-                time = record.get_time()
-                status = record.get_value()
+        if len(tables) > 0:
+            for table in tables:
+                for record in table.records:
+                    time = record.get_time()
+                    status = record.get_value()
 
-    if status:
-        alarm_active[ant] = True
+        alarm_active[ant][item] = status
 
 print(alarm_active)
 alarm_to_send = False
 alarm_list = check_alarm()
-# print(alarm_list)
-for ant in antennas:
-    if alarm_active[ant]:   # If alarm is on for this antenna
-        if len(alarm_list[ant]) > 0:    # alarms were found during check_alarm
-            for i in alarm_list[ant]:
-                item = f'{i}_{ant}' if i != 'acs' else f'acs'
-                data = read_json_partial(json_alarm_file, item)
+print(alarm_list)
+
+for ant, items in alarm_list.items():
+    if alarm_active[ant]:
+        for item in items:
+            if alarm_active[ant][item]:
+                data = read_json_partial(json_alarm_file, f'{item}_{ant}')
                 issue = data['issue']
                 time = datetime.now()
                 utc = time.astimezone(ZoneInfo('UTC')).strftime('%Y%m%d:%H%M%S')
-                alarm_logger.info(f'{utc}:{ant}:{i}:{issue}')
+                alarm_logger.info(f'{utc}:{ant}:{item}:{issue}')
+                print(f'logged {utc}:{ant}:{item}:{issue}')
 
                 if not alarm_to_send:
                     alarm_to_send = True
 
-
 # Sending the alarm if needed
 if alarm_to_send:
-    # radio_alarm.send_alarm()
-    print(f'Sending alarm')
+    radio_alarm.send_alarm()
+    # print(f'Sending alarm')
     alarm_to_send = False
