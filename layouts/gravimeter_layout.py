@@ -20,7 +20,9 @@ label = 'Gravimeter'
 ##########################
 # GRAVIMETERS TAB LAYOUT #
 ##########################
-layout = html.Iframe(
-    src='http://gravity.statkart.no/index.html',
-    style={'width': '100%', 'height': '85vh', 'border': 'none'},
-)
+layout = html.Div([
+    html.Iframe(src='http://gravity.statkart.no/index.html',
+                style={'width': '50%', 'height': '85vh', 'border': 'none'}),
+    html.Iframe(src='http://10.0.112.74/index.html',
+                style={'width': '50%', 'height': '85vh', 'border': 'none'}),
+    ])
