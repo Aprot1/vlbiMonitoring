@@ -9,7 +9,6 @@ from collections import OrderedDict
 from utils import influx_methods
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from alarm import alarm_methods
 
 import asyncio
 import dash_bootstrap_components as dbc
@@ -187,7 +186,7 @@ def change_alarm_state(nn_switch, ns_switch):
     set_props(f'{antenna}-alarm-switch', {'input_class_name': color})
 
     try:
-        last = influx_methods.get_last('alarms', 'status', antenna)
+        last = influx_methods.get_last('alarms', antenna, 'global')
         last = last.loc[0, '_value']
     except Exception:
         last = False
@@ -195,8 +194,7 @@ def change_alarm_state(nn_switch, ns_switch):
     if last == status:
         return
 
-    print(f'{antenna} recording {status}')
-    alarm_methods.record_status(status, antenna)
+    influx_methods.record_status(antenna, 'global', status)
 
 
 #--------------------
@@ -207,37 +205,35 @@ def change_alarm_state(nn_switch, ns_switch):
 async def check_alarm_status():
     ws = ctx.websocket
     last = {}
-    for i in antennas:
+    for ant in antennas:
         try:
-            initial_status = influx_methods.get_last('alarms', 'status', i)
+            initial_status = influx_methods.get_last('alarms', ant, 'global')
             if initial_status.empty:
                 initial_status = False
             else:
                 initial_status = initial_status.loc[0, '_value']
         except Exception:
             initial_status = False
-            print(f'{i} recording {initial_status}')
-            alarm_methods.record_status(initial_status, i)
-            print('ok')
+            influx_methods.record_status(ant, 'global', initial_status)
 
-        last[i] = initial_status
+        last[ant] = initial_status
         color = 'bg-success' if initial_status else 'bg-light'
-        set_props(f'{i}-alarm-switch', {'value': initial_status})
-        set_props(f'{i}-alarm-switch', {'input_class_name': color})
+        set_props(f'{ant}-alarm-switch', {'value': initial_status})
+        set_props(f'{ant}-alarm-switch', {'input_class_name': color})
 
     while not ws.is_shutdown:
-        for i in antennas:
+        for ant in antennas:
             try:
-                status = influx_methods.get_last('alarms', 'status', i)
+                status = influx_methods.get_last('alarms', ant, 'global')
                 status = status.loc[0, '_value']
             except Exception:
-                status = last[i]
+                status = last[ant]
 
-            if status != last[i]:
-                last[i] = status
+            if status != last[ant]:
+                last[ant] = status
                 color = 'bg-success' if status else 'bg-light'
-                set_props(f'{i}-alarm-switch', {'value': status})
-                set_props(f'{i}-alarm-switch', {'input_class_name': color})
+                set_props(f'{ant}-alarm-switch', {'value': status})
+                set_props(f'{ant}-alarm-switch', {'input_class_name': color})
         await asyncio.sleep(2)
 
 

@@ -15,5 +15,22 @@ INFO:ALARM:20261103:131359:nn:cryo:tlna temperature too high
 INFO:ALARM:20261117:102635:nn:acs:acs software not running
 INFO:ALARM:20261117:102635:nn:cryo:tlna temperature too high
 INFO:ALARM:20261117:102635:ns:acs:acs software not running
-INFO:ALARM:20261117:143006:nn:servos:ERROR: Check AZ axis on the LCP_ERROR: Check EL axis on the LCP_ERROR: Emergency stop active
-INFO:ALARM:20261117:145623:nn:servos:ERROR: Check AZ axis on the LCP_ERROR: Check EL axis on the LCP_ERROR: Emergency stop active
+INFO:ALARM:20261117:134826:nn:cryo:pressure too high
+INFO:ALARM:20261118:074419:nn:cryo:pressure too high
+INFO:ALARM:20261118:104506:nn:cryo:pressure too high
+INFO:ALARM:20261119:102506:nn:fs:fsclient is not running
+INFO:ALARM:20261119:102506:ns:fs:fsclient is not running
+INFO:ALARM:20261119:103006:nn:fs:fsclient is not running
+INFO:ALARM:20261119:103006:ns:fs:fsclient is not running
+INFO:ALARM:20261119:103506:nn:fs:fsclient is not running
+INFO:ALARM:20261119:103506:ns:fs:fsclient is not running
+INFO:ALARM:20261119:104006:nn:fs:fsclient is not running
+INFO:ALARM:20261119:104006:ns:fs:fsclient is not running
+INFO:ALARM:20261119:143110:nn:servos:Check AZ axis on the LCP_Check EL axis on the LCP_There is an active software interlock_Emergency stop active_Safety device error
+INFO:ALARM:20261119:143506:nn:servos:Check AZ axis on the LCP_Check EL axis on the LCP_There is an active software interlock_Emergency stop active_Safety device error
+INFO:ALARM:20261119:144005:nn:servos:Check AZ axis on the LCP_Check EL axis on the LCP_There is an active software interlock_Emergency stop active_Safety device error
+INFO:ALARM:20261119:150323:nn:cryo:pressure too high
+INFO:ALARM:20261119:165006:nn:fs:fsclient is not running
+INFO:ALARM:20261119:165006:ns:fs:fsclient is not running
+INFO:ALARM:20261119:165505:nn:fs:fsclient is not running
+INFO:ALARM:20261119:165505:ns:fs:fsclient is not running

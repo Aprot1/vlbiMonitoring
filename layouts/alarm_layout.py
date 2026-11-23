@@ -38,7 +38,7 @@ alarm_table = dbc.Table(
                 ],
             ]) for item in items
         ])
-    ], style={'width': 'auto'},
+    ], bordered=True, style={'width': 'auto'},
 )
 
 ####################

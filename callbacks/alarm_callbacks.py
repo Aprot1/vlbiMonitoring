@@ -2,7 +2,7 @@
 
 
 import os
-
+import traceback
 from alarm import alarm_methods
 from alarm import alarm_limits as al
 from utils import influx_methods
@@ -46,16 +46,16 @@ def fill_alarm_table():
         alarm_log.drop(['INFO', 'ALARM', 'date', 'time'], inplace=True, axis=1)
         alarm_log = alarm_log.head(10)
         try:
-            alarms_log['Issue'] = alarms_log['Issue'].str.replace('_', '\n', regex=False)
+            alarm_log['Issue'] = alarm_log['Issue'].str.replace('_', '\n', regex=False)
         except Exception:
-            pass
+            traceback.print_exc()
 
         try:
             last_ack = alarm_methods.read_json_partial(json_ack_file, ant)
             last_ack['date'] = datetime.strptime(last_ack['date'], '%Y%m%d%H%M%S')
             alarm_log = alarm_log[alarm_log['date&time'] >= last_ack['date']]
         except:
-            pass
+            traceback.print_exc()
 
         alarm_log['date&time'] = alarm_log['date&time'].dt.strftime('%Y-%m-%d %H:%M')
         table = dbc.Table.from_dataframe(alarm_log, bordered=False, color='dark',
@@ -163,7 +163,6 @@ def record_switch(values):
         try:
             last = influx_methods.get_last('alarms', ant, item)  # Check last recorded state
             last = last.loc[0, '_value']
-            # print(f'Switch: {item}, antenna: {ant}, last: {last}')
         except Exception:
             last = None
         if last != value:

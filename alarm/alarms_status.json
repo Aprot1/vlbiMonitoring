@@ -1,51 +1,51 @@
 {
     "acs_nn": {
-        "date": "14:56:19",
+        "date": "07:30:02",
         "status": "ok",
         "issue": null
     },
     "fs_nn": {
-        "date": "14:56:19",
+        "date": "07:30:02",
         "status": "ok",
         "issue": null
     },
     "fmout_nn": {
-        "date": "14:56:20",
+        "date": "07:30:02",
         "status": "ok",
         "issue": null
     },
     "servos_nn": {
-        "date": "14:56:21",
-        "status": "alarm",
-        "issue": "ERROR: Check AZ axis on the LCP_ERROR: Check EL axis on the LCP_ERROR: Emergency stop active"
+        "date": "07:30:03",
+        "status": "ok",
+        "issue": null
     },
     "cryo_nn": {
-        "date": "14:56:21",
+        "date": "07:30:03",
         "status": "alarm",
         "issue": "pressure too high"
     },
     "acs_ns": {
-        "date": "14:56:21",
+        "date": "07:30:04",
         "status": "ok",
         "issue": null
     },
     "fs_ns": {
-        "date": "14:56:22",
+        "date": "07:30:04",
         "status": "ok",
         "issue": null
     },
     "fmout_ns": {
-        "date": "14:56:22",
+        "date": "07:30:04",
         "status": "ok",
         "issue": null
     },
     "servos_ns": {
-        "date": "14:56:23",
+        "date": "07:30:05",
         "status": "ok",
         "issue": null
     },
     "cryo_ns": {
-        "date": "14:56:23",
+        "date": "07:30:06",
         "status": "ok",
         "issue": null
     }

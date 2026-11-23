@@ -137,7 +137,6 @@ def get_acs_data(database, query):
 # Record the status (ON/OFF) of the alarm in the influxdb
 #--------------
 def record_status(antenna, item, status):
-    print('recording', status, antenna)
     client = influxdb_client.InfluxDBClient(url=URL, token=TOKEN, org=ORG)
     try:
         write_api = client.write_api(write_options=SYNCHRONOUS)

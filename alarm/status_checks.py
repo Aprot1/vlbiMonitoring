@@ -14,7 +14,7 @@ import radio_alarm
 
 monitoring_path = '/home/oper/Antoine/monitoring/dashApp'
 antennas = ['nn', 'ns']
-items = ['acs', 'servos', 'fmout', 'fs', 'cryo']
+items = ['global', 'acs', 'servos', 'fmout', 'fs', 'cryo']
 cryo_list = ['tint', 'tlna', 'tfeed', 'tcold', 'pressure']
 json_alarm_file = os.path.join(os.path.dirname(__file__), 'alarms_status.json')
 lock_path = os.path.join(os.path.dirname(__file__), 'alarms_status.json.lock')
@@ -240,7 +240,7 @@ def get_servos_status(antenna):
             for i in out:
                 if 'ERROR' in i:
                     text = i.split(':')[1].lstrip()
-                    issue += f'{i}' if issue == '' else f'_{i}'
+                    issue += f'{text}' if issue == '' else f'_{text}'
         else:
             status = 'ok'
             issue = None
@@ -390,18 +390,19 @@ alarm_list = check_alarm()
 print(alarm_list)
 
 for ant, items in alarm_list.items():
-    if alarm_active[ant]:
-        for item in items:
-            if alarm_active[ant][item]:
-                data = read_json_partial(json_alarm_file, f'{item}_{ant}')
-                issue = data['issue']
-                time = datetime.now()
-                utc = time.astimezone(ZoneInfo('UTC')).strftime('%Y%m%d:%H%M%S')
-                alarm_logger.info(f'{utc}:{ant}:{item}:{issue}')
-                print(f'logged {utc}:{ant}:{item}:{issue}')
+    for item in items:
+        if item != 'global' and alarm_active[ant][item]:
+            data = read_json_partial(json_alarm_file, f'{item}_{ant}')
+            issue = data['issue']
+            time = datetime.now()
+            utc = time.astimezone(ZoneInfo('UTC')).strftime('%Y%m%d:%H%M%S')
+            alarm_logger.info(f'{utc}:{ant}:{item}:{issue}')
+            print(f'logged {utc}:{ant}:{item}:{issue}')
 
+            if alarm_active[ant]['global'] and alarm_active[ant][item]:
                 if not alarm_to_send:
                     alarm_to_send = True
+
 
 # Sending the alarm if needed
 if alarm_to_send:
